@@ -12,13 +12,18 @@ const CreateAccount = () => {
     password: ''
   });
   const [isFormValid, setIsFormValid] = useState(false);
-  const [isUsernameUnique, setIsUsernameUnique] = useState(true);
+  const [isUnique, setIsUnique] = useState({
+    username: true,
+    email: true,
+    phone: true
+  });
 
   useEffect(() => {
     const { fullName, username, email, phone, password } = formData;
     const allFieldsFilled = fullName && username && email && phone && password;
-    setIsFormValid(allFieldsFilled && isUsernameUnique);
-  }, [formData, isUsernameUnique]);
+    const allUnique = isUnique.username && isUnique.email && isUnique.phone;
+    setIsFormValid(allFieldsFilled && allUnique);
+  }, [formData, isUnique]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -27,10 +32,10 @@ const CreateAccount = () => {
       [name]: value
     });
 
-    if (name === 'username') {
+    if (['username', 'email', 'phone'].includes(name)) {
       const existingUsers = JSON.parse(localStorage.getItem('users')) || [];
-      const isUnique = !existingUsers.some(user => user.username === value);
-      setIsUsernameUnique(isUnique);
+      const isUnique = !existingUsers.some(user => user[name] === value);
+      setIsUnique(prevState => ({ ...prevState, [name]: isUnique }));
     }
   };
 
@@ -50,13 +55,15 @@ const CreateAccount = () => {
   return (
     <div className="flex justify-center items-center min-h-screen bg-createBg">
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
-        <h2 className="text-2xl font-bold mb-6 text-confirmBtn">Create account</h2>
+        <h2 className="text-2xl font-bold mb-6 text-confirmBtn">Create Account</h2>
         <form onSubmit={handleSubmit}>
           <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
           <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
-          {!isUsernameUnique && <p className="text-confirmBtn mb-4">Username already taken</p>}
+          {!isUnique.username && <p className="text-red-500 mb-4">Username already taken</p>}
           <input type="email" name="email" placeholder="Email" value={formData.email} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
+          {!isUnique.email && <p className="text-red-500 mb-4">Email already registered</p>}
           <input type="text" name="phone" placeholder="Phone" value={formData.phone} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
+          {!isUnique.phone && <p className="text-red-500 mb-4">Phone number already registered</p>}
           <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
           <button type="submit" className={`w-full ${isFormValid ? 'bg-confirmBtn' : 'bg-gray-400'} text-white p-2 rounded`} disabled={!isFormValid}>Confirm</button>
         </form>
