@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import api from '../api';
 
 const Login = ({ setLoggedIn }) => {
   const navigate = useNavigate();
@@ -25,19 +25,14 @@ const Login = ({ setLoggedIn }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    const userExists = users.some(user => user.username === formData.username && user.password === formData.password);
-    if (userExists) {
+    try {
+      const response = await api.post('/users/login', formData);
+      localStorage.setItem('token', response.data.token);
       setLoggedIn(true);
       navigate('/dashboard');
-      try {
-        const response = await axios.post('/api/login', formData);
-        console.log(response.data);
-      } catch (error) {
-        console.error(error);
-      }
-    } else {
-      console.error('Invalid username or password');
+    } catch (error) {
+      console.error('Login failed:', error.response?.data || error.message);
+      // Handle error (e.g., show error message to user)
     }
   };
 
@@ -46,9 +41,29 @@ const Login = ({ setLoggedIn }) => {
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
         <h2 className="text-2xl font-bold mb-6 text-loginBtn">Login</h2>
         <form onSubmit={handleSubmit}>
-          <input type="text" name="username" placeholder="Username" value={formData.username} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
-          <input type="password" name="password" placeholder="Password" value={formData.password} onChange={handleChange} className="w-full p-2 mb-4 border border-gray-300 rounded" />
-          <button type="submit" className={`w-full ${isFormValid ? 'bg-loginBtn' : 'bg-gray-400'} text-white p-2 rounded`} disabled={!isFormValid}>Login</button>
+          <input 
+            type="text" 
+            name="username" 
+            placeholder="Username" 
+            value={formData.username} 
+            onChange={handleChange} 
+            className="w-full p-2 mb-4 border border-gray-300 rounded" 
+          />
+          <input 
+            type="password" 
+            name="password" 
+            placeholder="Password" 
+            value={formData.password} 
+            onChange={handleChange} 
+            className="w-full p-2 mb-4 border border-gray-300 rounded" 
+          />
+          <button 
+            type="submit" 
+            className={`w-full ${isFormValid ? 'bg-loginBtn' : 'bg-gray-400'} text-white p-2 rounded`} 
+            disabled={!isFormValid}
+          >
+            Login
+          </button>
         </form>
         <p className="mt-4 text-gray-600">
           Not registered? <Link to="/create-account" className="text-loginBtn">Create an account</Link>
