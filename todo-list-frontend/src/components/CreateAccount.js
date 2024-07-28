@@ -5,11 +5,12 @@ import api from '../api';
 const CreateAccount = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullname: '',
+    name: '',
     username: '',
     email: '',
     password: ''
   });
+  
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
@@ -19,8 +20,8 @@ const CreateAccount = () => {
 
   const validateForm = () => {
     let errors = {};
-    if (formData.fullname.length < 5) {
-      errors.username = 'fullname must be at least 5 characters long';
+    if (formData.name.length < 5) {
+      errors.name = 'Name must be at least 5 characters long';
     }
     if (formData.username.length < 3) {
       errors.username = 'Username must be at least 3 characters long';
@@ -33,7 +34,7 @@ const CreateAccount = () => {
     }
     setErrors(errors);
     setIsFormValid(Object.keys(errors).length === 0);
-  };
+  };  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -71,15 +72,15 @@ const CreateAccount = () => {
       <div className="bg-white p-8 rounded shadow-md w-full max-w-md text-center">
         <h2 className="text-2xl font-bold mb-6 text-confirmBtn">Create Account</h2>
         <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            name="fullname"
-            placeholder="fullname"
-            value={formData.fullname}
-            onChange={handleChange}
-            className="w-full p-2 mb-1 border border-gray-300 rounded"
-          />
-          {errors.fullname && <p className="text-red-500 text-sm mb-2">{errors.fullname}</p>}
+        <input
+    type="text"
+    name="name"
+    placeholder="Name"
+    value={formData.name}
+    onChange={handleChange}
+    className="w-full p-2 mb-1 border border-gray-300 rounded"
+  />
+  {errors.name && <p className="text-red-500 text-sm mb-2">{errors.name}</p>}  
           <input
             type="text"
             name="username"
