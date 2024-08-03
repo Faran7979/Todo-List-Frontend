@@ -1,24 +1,61 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import CreateAccount from './components/CreateAccount';
+import Login from './components/Login';
+import Dashboard from './components/Dashboard';
+import api from './api'; // Make sure this path is correct
 
 function App() {
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem('token');
+      if (token) {
+        try {
+          // Verify the token with the backend
+          await api.get('/users/verify-token'); // Adjust this endpoint as needed
+          setLoggedIn(true);
+        } catch (error) {
+          console.error('Token verification failed:', error);
+          localStorage.removeItem('token');
+          setLoggedIn(false);
+        }
+      } else {
+        setLoggedIn(false);
+      }
+      setLoading(false);
+    };
+
+    checkAuthStatus();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route
+            path="/"
+            element={loggedIn ? <Navigate to="/dashboard" /> : <Login setLoggedIn={setLoggedIn} />}
+          />
+          <Route 
+            path="/login" 
+            element={loggedIn ? <Navigate to="/dashboard" /> : <Login setLoggedIn={setLoggedIn} />} 
+          />
+          <Route path="/create-account" element={<CreateAccount />} />
+          <Route
+            path="/dashboard"
+            element={loggedIn ? <Dashboard setLoggedIn={setLoggedIn} /> : <Navigate to="/login" />}
+          />
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
