@@ -47,12 +47,13 @@ const Dashboard = () => {
   }
 };
   
-  const handleDeleteTask = async (taskId) => {
+const handleDeleteTask = async (taskId) => {
   try {
+    console.log('Deleting task with ID:', taskId);
     await api.delete(`/tasks/${taskId}`);
     setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
   } catch (error) {
-    console.error('Error deleting task:', error);
+    console.error('Error deleting task:', error.response?.data || error.message);
   }
 };
 
