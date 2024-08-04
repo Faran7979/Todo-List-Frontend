@@ -36,15 +36,25 @@ const Dashboard = () => {
   };
 
   const handleAddTask = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/tasks', newTask);
-      setTasks(prevTasks => [...prevTasks, response.data]);
-      setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
-    } catch (error) {
-      console.error('Error adding task:', error);
-    }
-  };
+  e.preventDefault();
+  try {
+    console.log('Sending task data:', newTask); 
+    const response = await api.post('/tasks', newTask);
+    setTasks(prevTasks => [...prevTasks, response.data]);
+    setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
+  } catch (error) {
+    console.error('Error adding task:', error.response?.data || error.message);
+  }
+};
+  
+  const handleDeleteTask = async (taskId) => {
+  try {
+    await api.delete(`/tasks/${taskId}`);
+    setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
+  } catch (error) {
+    console.error('Error deleting task:', error);
+  }
+};
 
   const handleAddCategory = async (e) => {
   e.preventDefault();
@@ -106,35 +116,28 @@ const handleDeleteCategory = async (id) => {
                 </select>
               </div>
             </div>
-            <ul className="space-y-4">
-              {tasks
-                .filter(task => filter === 'all' || task.category_id.toString() === filter)
-                .sort((a, b) => {
-                  if (sort === 'due_date') return new Date(a.due_date) - new Date(b.due_date);
-                  if (sort === 'priority') return a.priority - b.priority;
-                  return 0;
-                })
-                .map(task => (
-                  <li key={task.task_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
-                    <div>
-                      <h3 className="font-semibold text-lg">{task.title}</h3>
-                      <p className="text-gray-600 mt-1">{task.description}</p>
-                      <div className="flex items-center mt-2 space-x-2">
-                        <span className={`px-2 py-1 rounded text-xs ${getPriorityClass(task.priority)}`}>
-                          {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}
-                        </span>
-                        <span className="text-sm text-gray-500">Due: {task.due_date}</span>
-                        <span className="text-sm text-gray-500">
-                          Category: {categories.find(c => c.category_id === task.category_id)?.name}
-                        </span>
-                      </div>
-                    </div>
-                    <button onClick={() => handleDeleteTask(task.task_id)} className="text-red-500 hover:text-red-700">
-                      Delete
-                    </button>
-                </li>
-              ))}
-            </ul>
+           <ul className="space-y-4">
+  {filteredAndSortedTasks.map(task => (
+    <li key={task.task_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+      <div>
+        <h3 className="font-semibold text-lg">{task.title}</h3>
+        <p className="text-gray-600 mt-1">{task.description}</p>
+        <div className="flex items-center mt-2 space-x-2">
+          <span className={`px-2 py-1 rounded text-xs ${getPriorityClass(task.priority)}`}>
+            {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}
+          </span>
+          <span className="text-sm text-gray-500">Due: {task.due_date}</span>
+          <span className="text-sm text-gray-500">
+            Category: {categories.find(c => c.category_id === task.category_id)?.name}
+          </span>
+        </div>
+      </div>
+      <button onClick={() => handleDeleteTask(task.task_id)} className="text-red-500 hover:text-red-700">
+        Delete
+      </button>
+    </li>
+  ))}
+</ul>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Add New Task</h2>
