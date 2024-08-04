@@ -47,42 +47,24 @@ const Dashboard = () => {
   };
 
   const handleAddCategory = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/categories', { name: newCategory });
-      setCategories(prevCategories => [...prevCategories, response.data]);
-      setNewCategory('');
-    } catch (error) {
-      console.error('Error adding category:', error);
-    }
-  };
+  e.preventDefault();
+  try {
+    const response = await api.post('/categories', { name: newCategory });
+    setCategories(prevCategories => [...prevCategories, response.data]);
+    setNewCategory('');
+  } catch (error) {
+    console.error('Error adding category:', error.response?.data || error.message);
+  }
+};
 
-  const handleDeleteCategory = async (id) => {
-    try {
-      await api.delete(`/categories/${id}`);
-      setCategories(prevCategories => prevCategories.filter(category => category.category_id !== id));
-    } catch (error) {
-      console.error('Error deleting category:', error);
-    }
-  };
-
-  const handleDeleteTask = async (id) => {
-    try {
-      await api.delete(`/tasks/${id}`);
-      setTasks(prevTasks => prevTasks.filter(task => task.task_id !== id));
-    } catch (error) {
-      console.error('Error deleting task:', error);
-    }
-  };
-
-  const handleUpdateTaskStatus = async (id, newStatus) => {
-    try {
-      const response = await api.patch(`/tasks/${id}`, { status: newStatus });
-      setTasks(prevTasks => prevTasks.map(task => task.task_id === id ? response.data : task));
-    } catch (error) {
-      console.error('Error updating task status:', error);
-    }
-  };
+const handleDeleteCategory = async (id) => {
+  try {
+    await api.delete(`/categories/${id}`);
+    setCategories(prevCategories => prevCategories.filter(category => category.category_id !== id));
+  } catch (error) {
+    console.error('Error deleting category:', error.response?.data || error.message);
+  }
+};
 
   const filteredAndSortedTasks = tasks
     .filter(task => filter === 'all' || task.category_id.toString() === filter)
