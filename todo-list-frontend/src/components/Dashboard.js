@@ -37,13 +37,14 @@ const Dashboard = () => {
 
   const handleAddTask = async (e) => {
   e.preventDefault();
-  try {
-    console.log('Sending task data:', newTask); 
+    try {
+    console.log('Sending task data:', newTask);
     const response = await api.post('/tasks', newTask);
     setTasks(prevTasks => [...prevTasks, response.data]);
     setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
   } catch (error) {
     console.error('Error adding task:', error.response?.data || error.message);
+    alert(`Failed to add task: ${error.response?.data?.message || 'Unknown error'}`);
   }
 };
   
