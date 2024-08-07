@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import api from '../api';
 
 const Dashboard = () => {
@@ -10,6 +9,11 @@ const Dashboard = () => {
   const [newCategory, setNewCategory] = useState('');
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('due_date');
+
+  const [editingTask, setEditingTask] = useState(null);
+  const [editingCategory, setEditingCategory] = useState(null); 
+  const [editingTaskData, setEditingTaskData] = useState({});
+  const [editingCategoryData, setEditingCategoryData] = useState({}); 
 
   useEffect(() => {
     fetchData();
@@ -36,47 +40,68 @@ const Dashboard = () => {
   };
 
   const handleAddTask = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
     try {
-    console.log('Sending task data:', newTask);
-    const response = await api.post('/tasks', newTask);
-    setTasks(prevTasks => [...prevTasks, response.data]);
-    setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
-  } catch (error) {
-    console.error('Error adding task:', error.response?.data || error.message);
-    alert(`Failed to add task: ${error.response?.data?.message || 'Unknown error'}`);
-  }
-};
-  
-const handleDeleteTask = async (taskId) => {
-  try {
-    console.log('Deleting task with ID:', taskId);
-    await api.delete(`/tasks/${taskId}`);
-    setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
-  } catch (error) {
-    console.error('Error deleting task:', error.response?.data || error.message);
-  }
+      console.log('Sending task data:', newTask);
+      const response = await api.post('/tasks', newTask);
+      setTasks(prevTasks => [...prevTasks, response.data]);
+      setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
+    } catch (error) {
+      console.error('Error adding task:', error.response?.data || error.message);
+      alert(`Failed to add task: ${error.response?.data?.message || 'Unknown error'}`);
+    }
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    try {
+      console.log('Deleting task with ID:', taskId);
+      await api.delete(`/tasks/${taskId}`);
+      setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
+    } catch (error) {
+      console.error('Error deleting task:', error.response?.data || error.message);
+    }
+  };
+
+  const handleUpdateTask = async (taskId, updatedTask) => {
+    try {
+        const { task_id, user_id, created_at, updated_at, status, ...taskWithoutExcludedFields } = updatedTask;
+        const response = await api.put(`/tasks/${taskId}`, taskWithoutExcludedFields);
+        setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
+        setEditingTask(null);
+    } catch (error) {
+        console.error('Error updating task:', error.response?.data || error.message);
+    }
 };
 
   const handleAddCategory = async (e) => {
-  e.preventDefault();
-  try {
-    const response = await api.post('/categories', { name: newCategory });
-    setCategories(prevCategories => [...prevCategories, response.data]);
-    setNewCategory('');
-  } catch (error) {
-    console.error('Error adding category:', error.response?.data || error.message);
-  }
-};
+    e.preventDefault();
+    try {
+      const response = await api.post('/categories', { name: newCategory });
+      setCategories(prevCategories => [...prevCategories, response.data]);
+      setNewCategory('');
+    } catch (error) {
+      console.error('Error adding category:', error.response?.data || error.message);
+    }
+  };
 
-const handleDeleteCategory = async (id) => {
-  try {
-    await api.delete(`/categories/${id}`);
-    setCategories(prevCategories => prevCategories.filter(category => category.category_id !== id));
-  } catch (error) {
-    console.error('Error deleting category:', error.response?.data || error.message);
-  }
-};
+  const handleDeleteCategory = async (id) => {
+    try {
+      await api.delete(`/categories/${id}`);
+      setCategories(prevCategories => prevCategories.filter(category => category.category_id !== id));
+    } catch (error) {
+      console.error('Error deleting category:', error.response?.data || error.message);
+    }
+  };
+
+  const handleUpdateCategory = async (id, updatedCategory) => {
+    try {
+      const response = await api.put(`/categories/${id}`, updatedCategory);
+      setCategories(prevCategories => prevCategories.map(category => (category.category_id === id ? response.data : category)));
+      setEditingCategory(null);
+    } catch (error) {
+      console.error('Error updating category:', error.response?.data || error.message);
+    }
+  };
 
   const filteredAndSortedTasks = tasks
     .filter(task => filter === 'all' || task.category_id.toString() === filter)
@@ -95,14 +120,34 @@ const handleDeleteCategory = async (id) => {
     }
   };
 
+  const handleEditTask = (task) => {
+    setEditingTask(task.task_id);
+    setEditingTaskData(task);
+  };
+
+  const handleEditCategory = (category) => {
+    setEditingCategory(category.category_id);
+    setEditingCategoryData(category);
+  };
+
+  const handleTaskInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingTaskData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCategoryInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingCategoryData(prev => ({ ...prev, [name]: value }));
+  };
+
   return (
     <div className="bg-gray-100 min-h-screen p-8">
-      <h1 className="text-4xl font-bold mb-8 text-center text-confirmBtn">Todo List Dashboard</h1>
+     <h1 className="text-4xl font-bold mb-8 text-center text-confirmBtn">Todo List Dashboard</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-confirmBtn">Tasks</h2>
+              <h2 className="text-2xl font-semibold text-loginBtn">Tasks</h2>
               <div className="space-x-2">
                 <select value={filter} onChange={(e) => setFilter(e.target.value)} className="p-2 border rounded">
                   <option value="all">All Categories</option>
@@ -118,33 +163,87 @@ const handleDeleteCategory = async (id) => {
                 </select>
               </div>
             </div>
-           <ul className="space-y-4">
-  {filteredAndSortedTasks.map(task => (
-    <li key={task.task_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
-      <div>
-        <h3 className="font-semibold text-lg">{task.title}</h3>
-        <p className="text-gray-600 mt-1">{task.description}</p>
-        <div className="flex items-center mt-2 space-x-2">
-          <span className={`px-2 py-1 rounded text-xs ${getPriorityClass(task.priority)}`}>
-            {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}
-          </span>
-          <span className="text-sm text-gray-500">Due: {task.due_date}</span>
-          <span className="text-sm text-gray-500">
-            Category: {categories.find(c => c.category_id === task.category_id)?.name}
-          </span>
-        </div>
-      </div>
-      <button onClick={() => handleDeleteTask(task.task_id)} className="text-red-500 hover:text-red-700">
-        Delete
-      </button>
-    </li>
-  ))}
-</ul>
-          </div>
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Add New Task</h2>
-            <form onSubmit={handleAddTask}>
-              <div className="space-y-4">
+            <ul className="space-y-4">
+              {filteredAndSortedTasks.map(task => (
+                <li key={task.task_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+                  {editingTask === task.task_id ? (
+                    <div className="flex flex-col space-y-2">
+                      <input
+                        type="text"
+                        name="title"
+                        value={editingTaskData.title}
+                        onChange={handleTaskInputChange}
+                        className="p-2 border rounded"
+                      />
+                      <input
+                        type="text"
+                        name="description"
+                        value={editingTaskData.description}
+                        onChange={handleTaskInputChange}
+                        className="p-2 border rounded"
+                      />
+                      <input
+                        type="date"
+                        name="due_date"
+                        value={editingTaskData.due_date}
+                        onChange={handleTaskInputChange}
+                        className="p-2 border rounded"
+                      />
+                      <select
+                        name="priority"
+                        value={editingTaskData.priority}
+                        onChange={handleTaskInputChange}
+                        className="p-2 border rounded"
+                      >
+                        <option value="1">High</option>
+                        <option value="2">Medium</option>
+                        <option value="3">Low</option>
+                      </select>
+                      <select
+                        name="category_id"
+                        value={editingTaskData.category_id}
+                        onChange={handleTaskInputChange}
+                        className="p-2 border rounded"
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map(category => (
+                          <option key={category.category_id} value={category.category_id.toString()}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="flex space-x-2 mt-2">
+                        <button onClick={() => handleUpdateTask(task.task_id, editingTaskData)} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">
+                          Save
+                        </button>
+                        <button onClick={() => setEditingTask(null)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <h3 className="text-lg font-semibold">{task.title}</h3>
+                        <p>{task.description}</p>
+                        <p>Due Date: {task.due_date}</p>
+                        <p className={getPriorityClass(task.priority)}>Priority: {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</p>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleEditTask(task)} className="text-blue-500 hover:text-blue-700">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDeleteTask(task.task_id)} className="text-red-500 hover:text-red-700">
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <form onSubmit={handleAddTask} className="mt-4">
+              <div className="space-y-2">
                 <input
                   type="text"
                   name="title"
@@ -152,15 +251,14 @@ const handleDeleteCategory = async (id) => {
                   onChange={handleInputChange}
                   placeholder="Title"
                   className="w-full p-2 border rounded"
-                  required
                 />
-                <textarea
+                <input
+                  type="text"
                   name="description"
                   value={newTask.description}
                   onChange={handleInputChange}
                   placeholder="Description"
                   className="w-full p-2 border rounded"
-                  required
                 />
                 <input
                   type="date"
@@ -168,7 +266,6 @@ const handleDeleteCategory = async (id) => {
                   value={newTask.due_date}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
-                  required
                 />
                 <select
                   name="priority"
@@ -176,75 +273,105 @@ const handleDeleteCategory = async (id) => {
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
                 >
-                  <option value={1}>High</option>
-                  <option value={2}>Medium</option>
-                  <option value={3}>Low</option>
+                  <option value="1">High</option>
+                  <option value="2">Medium</option>
+                  <option value="3">Low</option>
                 </select>
                 <select
                   name="category_id"
                   value={newTask.category_id}
                   onChange={handleInputChange}
                   className="w-full p-2 border rounded"
-                  required
                 >
                   <option value="">Select Category</option>
                   {categories.map(category => (
-                    <option key={category.category_id} value={category.category_id}>
+                    <option key={category.category_id} value={category.category_id.toString()}>
                       {category.name}
                     </option>
                   ))}
                 </select>
-                <button type="submit" className="bg-loginBtn text-white px-4 py-2 rounded hover:bg-confirmBtn">
-                  Add Task
-                </button>
               </div>
+              <button type="submit" className="bg-confirmBtn text-white px-4 py-2 rounded mt-4 hover:bg-loginBtn">
+                Add Task
+              </button>
             </form>
           </div>
         </div>
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold mb-4 text-confirmBtn">Categories</h2>
-            <ul className="space-y-2">
+            <ul className="space-y-4">
               {categories.map(category => (
-                <li key={category.category_id} className="flex justify-between items-center">
-                  <span>{category.name}</span>
-                  <button onClick={() => handleDeleteCategory(category.category_id)} className="text-red-500 hover:text-red-700">
-                    Delete
-                  </button>
+                <li key={category.category_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+                  {editingCategory === category.category_id ? (
+                    <div className="flex flex-col space-y-2">
+                      <input
+                        type="text"
+                        name="name"
+                        value={editingCategoryData.name}
+                        onChange={handleCategoryInputChange}
+                        className="p-2 border rounded"
+                      />
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleUpdateCategory(category.category_id, editingCategoryData)} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">
+                          Save
+                        </button>
+                        <button onClick={() => setEditingCategory(null)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <span>{category.name}</span>
+                      <div className="flex space-x-2">
+                        <button onClick={() => handleEditCategory(category)} className="text-blue-500 hover:text-blue-700">
+                          Edit
+                        </button>
+                        <button onClick={() => handleDeleteCategory(category.category_id)} className="text-red-500 hover:text-red-700">
+                          Delete
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>
-          </div>
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Add New Category</h2>
-            <form onSubmit={handleAddCategory}>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  value={newCategory}
-                  onChange={(e) => setNewCategory(e.target.value)}
-                  placeholder="Category Name"
-                  className="w-full p-2 border rounded"
-                  required
-                />
-                <button type="submit" className="bg-loginBtn text-white px-4 py-2 rounded hover:bg-confirmBtn">
-                  Add Category
-                </button>
-              </div>
+            <form onSubmit={handleAddCategory} className="mt-4">
+              <input
+                type="text"
+                value={newCategory}
+                onChange={(e) => setNewCategory(e.target.value)}
+                placeholder="New Category"
+                className="w-full p-2 border rounded mb-2"
+              />
+              <button type="submit" className="bg-loginBtn text-white px-4 py-2 rounded hover:bg-confirmBtn">
+                Add Category
+              </button>
             </form>
           </div>
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-confirmBtn">Progress</h2>
-            <div className="space-y-2">
+            <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Progress</h2>
+            <div className="space-y-4">
               <div>
-                <h3 className="text-lg font-semibold">Weekly Progress</h3>
-                <progress className="w-full" value={progress.weekly} max="100"></progress>
-                <span>{progress.weekly}%</span>
+                <span className="font-semibold">Weekly Progress:</span>
+                <div className="bg-gray-200 rounded-full h-4 mt-1">
+                  <div
+                    className="bg-green-500 h-4 rounded-full"
+                    style={{ width: `${progress.weekly}%` }}
+                  ></div>
+                </div>
+                <span className="text-sm text-gray-600">{progress.weekly}%</span>
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Daily Progress</h3>
-                <progress className="w-full" value={progress.daily} max="100"></progress>
-                <span>{progress.daily}%</span>
+                <span className="font-semibold">Daily Progress:</span>
+                <div className="bg-gray-200 rounded-full h-4 mt-1">
+                  <div
+                    className="bg-yellow-500 h-4 rounded-full"
+                    style={{ width: `${progress.daily}%` }}
+                  ></div>
+                </div>
+                <span className="text-sm text-gray-600">{progress.daily}%</span>
               </div>
             </div>
           </div>
