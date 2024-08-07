@@ -65,11 +65,14 @@ const Dashboard = () => {
   const handleUpdateTask = async (taskId, updatedTask) => {
     try {
         const { task_id, user_id, created_at, updated_at, status, ...taskWithoutExcludedFields } = updatedTask;
+        console.log('Sending update request with data:', taskWithoutExcludedFields);
         const response = await api.put(`/tasks/${taskId}`, taskWithoutExcludedFields);
         setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
         setEditingTask(null);
     } catch (error) {
-        console.error('Error updating task:', error.response?.data || error.message);
+        console.error('Error updating task:', error);
+        console.error('Error response:', error.response);
+        console.error('Error message:', error.message);
     }
 };
 
