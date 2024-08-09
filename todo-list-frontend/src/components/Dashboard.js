@@ -62,7 +62,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleUpdateTask = async (taskId, updatedTask) => {
+ const handleUpdateTask = async (taskId, updatedTask) => {
     try {
         const { task_id, user_id, created_at, updated_at, status, ...taskWithoutExcludedFields } = updatedTask;
         console.log('Sending update request with data:', taskWithoutExcludedFields);
@@ -71,8 +71,8 @@ const Dashboard = () => {
         setEditingTask(null);
     } catch (error) {
         console.error('Error updating task:', error);
-        console.error('Error response:', error.response);
-        console.error('Error message:', error.message);
+        console.error('Error response:', error.response?.data);
+        alert(`Failed to update task: ${error.response?.data?.message || error.message}`);
     }
 };
 
