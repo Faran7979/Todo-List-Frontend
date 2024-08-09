@@ -9,11 +9,10 @@ const Dashboard = () => {
   const [newCategory, setNewCategory] = useState('');
   const [filter, setFilter] = useState('all');
   const [sort, setSort] = useState('due_date');
-
   const [editingTask, setEditingTask] = useState(null);
-  const [editingCategory, setEditingCategory] = useState(null); 
+  const [editingCategory, setEditingCategory] = useState(null);
   const [editingTaskData, setEditingTaskData] = useState({});
-  const [editingCategoryData, setEditingCategoryData] = useState({}); 
+  const [editingCategoryData, setEditingCategoryData] = useState({});
 
   useEffect(() => {
     fetchData();
@@ -42,7 +41,6 @@ const Dashboard = () => {
   const handleAddTask = async (e) => {
     e.preventDefault();
     try {
-      console.log('Sending task data:', newTask);
       const response = await api.post('/tasks', newTask);
       setTasks(prevTasks => [...prevTasks, response.data]);
       setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
@@ -54,7 +52,6 @@ const Dashboard = () => {
 
   const handleDeleteTask = async (taskId) => {
     try {
-      console.log('Deleting task with ID:', taskId);
       await api.delete(`/tasks/${taskId}`);
       setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
     } catch (error) {
@@ -62,20 +59,39 @@ const Dashboard = () => {
     }
   };
 
- const handleUpdateTask = async (taskId, updatedTask) => {
+  const handleUpdateTask = async (taskId, updatedTask) => {
     try {
-        const { task_id, user_id, created_at, updated_at, status, ...taskWithoutExcludedFields } = updatedTask;
-        console.log('Sending update request with data:', taskWithoutExcludedFields);
-        const response = await api.put(`/tasks/${taskId}`, taskWithoutExcludedFields);
-        setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
-        setEditingTask(null);
+      const { task_id, user_id, created_at, updated_at, status, ...taskWithoutExcludedFields } = updatedTask;
+      const response = await api.put(`/tasks/${taskId}`, taskWithoutExcludedFields);
+      setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
+      setEditingTask(null);
     } catch (error) {
-        console.error('Error updating task:', error);
-        console.error('Error response:', error.response?.data);
-        alert(`Failed to update task: ${error.response?.data?.message || error.message}`);
+      console.error('Error updating task:', error);
+      alert(`Failed to update task: ${error.response?.data?.message || error.message}`);
     }
-};
+  };
 
+  const toggleTaskCompletion = async (taskId) => {
+    try {
+      const response = await fetch(`http://localhost:3001/tasks/${taskId}/complete`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ is_completed: true })
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const result = await response.json();
+      console.log('Task status updated:', result);
+    } catch (error) {
+      console.error('Error toggling task status:', error);
+    }
+  };
+      
   const handleAddCategory = async (e) => {
     e.preventDefault();
     try {
@@ -226,11 +242,19 @@ const Dashboard = () => {
                     </div>
                   ) : (
                     <>
-                      <div>
-                        <h3 className="text-lg font-semibold">{task.title}</h3>
-                        <p>{task.description}</p>
-                        <p>Due Date: {task.due_date}</p>
-                        <p className={getPriorityClass(task.priority)}>Priority: {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</p>
+                      <div className="flex items-center space-x-4">
+                        <input
+                          type="checkbox"
+                          checked={task.status}
+                          onChange={() => toggleTaskCompletion(task.task_id, task.status)}
+                          className="form-checkbox"
+                        />
+                        <div>
+                          <h3 className="text-lg font-semibold">{task.title}</h3>
+                          <p>{task.description}</p>
+                          <p>Due Date: {task.due_date}</p>
+                          <p className={getPriorityClass(task.priority)}>Priority: {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</p>
+                        </div>
                       </div>
                       <div className="flex space-x-2">
                         <button onClick={() => handleEditTask(task)} className="text-blue-500 hover:text-blue-700">
