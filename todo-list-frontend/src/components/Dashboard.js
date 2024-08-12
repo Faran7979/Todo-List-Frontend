@@ -71,26 +71,22 @@ const Dashboard = () => {
     }
   };
 
-  const toggleTaskCompletion = async (taskId) => {
-    try {
-      const response = await fetch(`http://localhost:3001/tasks/${taskId}/complete`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ is_completed: true })
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const result = await response.json();
-      console.log('Task status updated:', result);
-    } catch (error) {
-      console.error('Error toggling task status:', error);
+ const toggleTaskCompletion = async (taskId, currentStatus) => {
+  try {
+    console.log('Toggling task completion:', { taskId, currentStatus });
+    const response = await api.put(`/tasks/${taskId}/complete`, {
+      is_completed: !currentStatus
+    });
+    console.log('Server response:', response.data);
+    if (response.status === 200) {
+      setTasks(prevTasks => prevTasks.map(task =>
+        task.task_id === taskId ? { ...task, is_completed: !currentStatus } : task
+      ));
     }
-  };
+  } catch (error) {
+    console.error('Error toggling task status:', error.response?.data || error.message);
+  }
+};
       
   const handleAddCategory = async (e) => {
     e.preventDefault();
@@ -244,11 +240,11 @@ const Dashboard = () => {
                     <>
                       <div className="flex items-center space-x-4">
                         <input
-                          type="checkbox"
-                          checked={task.status}
-                          onChange={() => toggleTaskCompletion(task.task_id, task.status)}
-                          className="form-checkbox"
-                        />
+                      type="checkbox"
+                        checked={task.is_completed}
+                      onChange={() => toggleTaskCompletion(task.task_id, task.is_completed)}
+                        className="form-checkbox"
+                              />
                         <div>
                           <h3 className="text-lg font-semibold">{task.title}</h3>
                           <p>{task.description}</p>
