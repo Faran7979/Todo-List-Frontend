@@ -60,16 +60,22 @@ const Dashboard = () => {
   };
 
   const handleUpdateTask = async (taskId, updatedTask) => {
-    try {
-      const { task_id, user_id, created_at, updated_at, status, ...taskWithoutExcludedFields } = updatedTask;
-      const response = await api.put(`/tasks/${taskId}`, taskWithoutExcludedFields);
-      setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
-      setEditingTask(null);
-    } catch (error) {
-      console.error('Error updating task:', error);
-      alert(`Failed to update task: ${error.response?.data?.message || error.message}`);
-    }
-  };
+  try {
+    const { title, description, due_date, priority, category_id } = updatedTask;
+    const response = await api.put(`/tasks/${taskId}`, {
+      title,
+      description,
+      due_date,
+      priority: Number(priority),
+      category_id: category_id ? Number(category_id) : null
+    });
+    setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
+    setEditingTask(null);
+  } catch (error) {
+    console.error('Error updating task:', error);
+    alert(`Failed to update task: ${error.response?.data?.message || error.message}`);
+  }
+};
 
  const toggleTaskCompletion = async (taskId, currentStatus) => {
   try {
@@ -137,8 +143,14 @@ const Dashboard = () => {
 
   const handleEditTask = (task) => {
     setEditingTask(task.task_id);
-    setEditingTaskData(task);
-  };
+   setEditingTaskData({
+    title: task.title,
+    description: task.description || '',
+    due_date: task.due_date || '',
+    priority: task.priority || 2,
+    category_id: task.category_id || ''
+  });
+};
 
   const handleEditCategory = (category) => {
     setEditingCategory(category.category_id);
