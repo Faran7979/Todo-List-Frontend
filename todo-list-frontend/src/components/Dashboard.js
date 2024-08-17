@@ -1,10 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [progress, setProgress] = useState({ weekly: 0, daily: 0 });
+  const [progress, setProgress] = useState({  daily: { percentage: 0, completed: 0, total: 0 },
+    weekly: { percentage: 0, completed: 0, total: 0 }
+  });
   const [newTask, setNewTask] = useState({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
   const [newCategory, setNewCategory] = useState('');
   const [filter, setFilter] = useState('all');
@@ -44,18 +48,43 @@ const Dashboard = () => {
       const response = await api.post('/tasks', newTask);
       setTasks(prevTasks => [...prevTasks, response.data]);
       setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
+      toast.success('Task added successfully!', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } catch (error) {
       console.error('Error adding task:', error.response?.data || error.message);
-      alert(`Failed to add task: ${error.response?.data?.message || 'Unknown error'}`);
+      toast.error('Failed to add task. Please try again.');
     }
   };
 
   const handleDeleteTask = async (taskId) => {
     try {
-      await api.delete(`/tasks/${taskId}`);
-      setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
+      const response = await api.delete(`/tasks/${taskId}`);
+      console.log('Delete task response:', response.data);
+      if (response.status === 200) {
+        setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
+        if (response.data.progress) {
+          setProgress(response.data.progress);
+        }
+        toast.success('Task deleted successfully!', {
+          position: "top-center",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      }
     } catch (error) {
       console.error('Error deleting task:', error.response?.data || error.message);
+      toast.error('Failed to delete task. Please try again.');
     }
   };
 
@@ -78,30 +107,42 @@ const Dashboard = () => {
 };
 
  const toggleTaskCompletion = async (taskId, currentStatus) => {
-  try {
-    console.log('Toggling task completion:', { taskId, currentStatus });
-    const response = await api.put(`/tasks/${taskId}/complete`, {
-      is_completed: !currentStatus
-    });
-    console.log('Server response:', response.data);
-    if (response.status === 200) {
-      setTasks(prevTasks => prevTasks.map(task =>
-        task.task_id === taskId ? { ...task, is_completed: !currentStatus } : task
-      ));
+    try {
+      console.log('Toggling task completion:', { taskId, currentStatus });
+      const response = await api.put(`/tasks/${taskId}/complete`, {
+        is_completed: !currentStatus
+      });
+      console.log('Server response:', response.data);
+      if (response.status === 200) {
+        setTasks(prevTasks => prevTasks.map(task =>
+          task.task_id === taskId ? { ...task, is_completed: !currentStatus } : task
+        ));
+        // Update progress with the new data from the server
+        setProgress(response.data.progress);
+      }
+    } catch (error) {
+      console.error('Error toggling task status:', error.response?.data || error.message);
     }
-  } catch (error) {
-    console.error('Error toggling task status:', error.response?.data || error.message);
-  }
-};
-      
+  };
+
   const handleAddCategory = async (e) => {
     e.preventDefault();
     try {
       const response = await api.post('/categories', { name: newCategory });
       setCategories(prevCategories => [...prevCategories, response.data]);
       setNewCategory('');
+      toast.success('Category added successfully!', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } catch (error) {
       console.error('Error adding category:', error.response?.data || error.message);
+      toast.error('Failed to add category. Please try again.');
     }
   };
 
@@ -109,8 +150,30 @@ const Dashboard = () => {
     try {
       await api.delete(`/categories/${id}`);
       setCategories(prevCategories => prevCategories.filter(category => category.category_id !== id));
+      toast.success('Category deleted successfully!', {
+        position: "top-center",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+      });
     } catch (error) {
-      console.error('Error deleting category:', error.response?.data || error.message);
+      if (error.response && error.response.data.message === 'Cannot delete category with associated tasks') {
+        toast.error('Cannot delete this category. Please delete all associated tasks first.', {
+          position: "top-center",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
+      } else {
+        console.error('Error deleting category:', error.response?.data || error.message);
+        toast.error('An error occurred while deleting the category');
+      }
     }
   };
 
@@ -169,6 +232,7 @@ const Dashboard = () => {
 
   return (
     <div className="bg-gray-100 min-h-screen p-8">
+      <ToastContainer />
      <h1 className="text-4xl font-bold mb-8 text-center text-confirmBtn">Todo List Dashboard</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
@@ -385,28 +449,32 @@ const Dashboard = () => {
               </button>
             </form>
           </div>
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Progress</h2>
-            <div className="space-y-4">
-              <div>
-                <span className="font-semibold">Weekly Progress:</span>
-                <div className="bg-gray-200 rounded-full h-4 mt-1">
-                  <div
-                    className="bg-green-500 h-4 rounded-full"
-                    style={{ width: `${progress.weekly}%` }}
-                  ></div>
-                </div>
-                <span className="text-sm text-gray-600">{progress.weekly}%</span>
-              </div>
-              <div>
-                <span className="font-semibold">Daily Progress:</span>
-                <div className="bg-gray-200 rounded-full h-4 mt-1">
-                  <div
-                    className="bg-yellow-500 h-4 rounded-full"
-                    style={{ width: `${progress.daily}%` }}
-                  ></div>
-                </div>
-                <span className="text-sm text-gray-600">{progress.daily}%</span>
+           <div className="bg-white rounded-lg shadow-lg p-6">
+        <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Progress</h2>
+        <div className="space-y-4">
+          <div>
+            <span className="font-semibold">Weekly Progress:</span>
+            <div className="bg-gray-200 rounded-full h-4 mt-1">
+              <div
+                className="bg-green-500 h-4 rounded-full"
+                style={{ width: `${progress.weekly.percentage}%` }}
+              ></div>
+            </div>
+            <span className="text-sm text-gray-600">
+              {progress.weekly.percentage}% ({progress.weekly.completed}/{progress.weekly.total} tasks)
+            </span>
+          </div>
+          <div>
+            <span className="font-semibold">Daily Progress:</span>
+            <div className="bg-gray-200 rounded-full h-4 mt-1">
+              <div
+                className="bg-yellow-500 h-4 rounded-full"
+                style={{ width: `${progress.daily.percentage}%` }}
+              ></div>
+            </div>
+            <span className="text-sm text-gray-600">
+              {progress.daily.percentage}% ({progress.daily.completed}/{progress.daily.total} tasks)
+            </span>
               </div>
             </div>
           </div>
