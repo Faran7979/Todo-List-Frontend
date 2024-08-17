@@ -37,6 +37,32 @@ const Dashboard = () => {
     }
   };
 
+  const handleLogout = () => {
+    console.log('Logout function called');
+    
+    // Clear JWT token from cookies
+    document.cookie = 'jwt_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    
+    // Clear token from localStorage (if you're using it)
+    localStorage.removeItem('jwt_token');
+    
+    // Clear token from sessionStorage (if you're using it)
+    sessionStorage.removeItem('jwt_token');
+  
+    // Redirect user to login page
+    window.location.href = '/login';
+  
+    // Show success message
+    toast.success('Logged out successfully', {
+      position: "top-center",
+      autoClose: 3000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+      progress: undefined,
+    });
+  };
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTask(prev => ({ ...prev, [name]: value }));
@@ -233,6 +259,12 @@ const Dashboard = () => {
   return (
     <div className="bg-gray-100 min-h-screen p-8">
       <ToastContainer />
+      <button
+      onClick={handleLogout}
+      className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+    >
+      LogOut
+    </button>
      <h1 className="text-4xl font-bold mb-8 text-center text-confirmBtn">Todo List Dashboard</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
