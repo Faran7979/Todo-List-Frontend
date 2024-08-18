@@ -239,14 +239,14 @@ const Dashboard = () => {
       return 0;
     });
 
-  const getPriorityClass = (priority) => {
-    switch (priority) {
-      case 1: return 'bg-red-500 text-white';
-      case 2: return 'bg-yellow-500 text-black';
-      case 3: return 'bg-green-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
+    const getPriorityClass = (priority) => {
+      switch (priority) {
+        case 1: return 'bg-red-500 text-white px-2 py-1 rounded';
+        case 2: return 'bg-yellow-500 text-black px-2 py-1 rounded';
+        case 3: return 'bg-green-500 text-white px-2 py-1 rounded';
+        default: return 'bg-gray-500 text-white px-2 py-1 rounded';
+      }
+    };
 
   const handleEditTask = (task) => {
     setEditingTask(task.task_id);
@@ -371,23 +371,23 @@ const Dashboard = () => {
                       onChange={() => toggleTaskCompletion(task.task_id, task.is_completed)}
                         className="form-checkbox"
                               />
-                        <div>
-                          <h3 className="text-lg font-semibold">{task.title}</h3>
-                          <p>{task.description}</p>
-                          <p>Due Date: {task.due_date}</p>
-                          <p className={getPriorityClass(task.priority)}>Priority: {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</p>
-                        </div>
+                              <div>
+                                <h3 className="text-lg font-semibold">{task.title}</h3>
+                                <p>{task.description}</p>
+                                <p>Due Date: {new Date(task.due_date).toLocaleDateString()}</p>
+                                <p>Priority: <span className={getPriorityClass(task.priority)}>{task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</span></p>
+                                </div>
                       </div>
                       <div className="flex space-x-2">
-                        <button onClick={() => handleEditTask(task)} className="text-blue-500 hover:text-blue-700">
+                        <button onClick={() => handleEditTask(task)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
                           Edit
-                        </button>
-                        <button onClick={() => handleDeleteTask(task.task_id)} className="text-red-500 hover:text-red-700">
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
+                          </button>
+                          <button onClick={() => handleDeleteTask(task.task_id)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                            Delete
+                            </button>
+                            </div>
+                            </>
+                          )}
                 </li>
               ))}
             </ul>
@@ -474,13 +474,13 @@ const Dashboard = () => {
                     <>
                       <span>{category.name}</span>
                       <div className="flex space-x-2">
-                        <button onClick={() => handleEditCategory(category)} className="text-blue-500 hover:text-blue-700">
+                        <button onClick={() => handleEditCategory(category)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
                           Edit
-                        </button>
-                        <button onClick={() => handleDeleteCategory(category.category_id)} className="text-red-500 hover:text-red-700">
-                          Delete
-                        </button>
-                      </div>
+                          </button>
+                          <button onClick={() => handleDeleteCategory(category.category_id)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                            Delete
+                            </button>
+                            </div>
                     </>
                   )}
                 </li>
