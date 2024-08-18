@@ -43,66 +43,84 @@ const Dashboard = () => {
   };
 
   const handleAddTask = async (e) => {
-    e.preventDefault();
-    try {
-      const response = await api.post('/tasks', newTask);
-      setTasks(prevTasks => [...prevTasks, response.data]);
+  e.preventDefault();
+  try {
+    const response = await api.post('/tasks', {
+      title: newTask.title,
+      description: newTask.description,
+      due_date: newTask.due_date,
+      priority: Number(newTask.priority),
+      category_id: newTask.category_id ? Number(newTask.category_id) : null
+    });
+
+    if (response.status === 201) {
+      // Add the new task to the existing tasks array
+      setTasks(prevTasks => [...prevTasks, response.data.task]);
+      
+      // Update progress if the response includes it
+      if (response.data.progress) {
+        setProgress(response.data.progress);
+      }
+
+      // Reset the newTask form
       setNewTask({ title: '', description: '', due_date: '', priority: 2, category_id: '' });
-      toast.success('Task added successfully!', {
-        position: "top-center",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-        progress: undefined,
-      });
-    } catch (error) {
-      console.error('Error adding task:', error.response?.data || error.message);
-      toast.error('Failed to add task. Please try again.');
+      
+      // Show success message
+      toast.success('Task added successfully!');
     }
-  };
+  } catch (error) {
+    console.error('Error adding task:', error.response?.data || error.message);
+    toast.error(`Failed to add task: ${error.response?.data?.message || error.message}`);
+  }
+};
 
   const handleDeleteTask = async (taskId) => {
-    try {
-      const response = await api.delete(`/tasks/${taskId}`);
-      console.log('Delete task response:', response.data);
-      if (response.status === 200) {
-        setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
-        if (response.data.progress) {
-          setProgress(response.data.progress);
-        }
-        toast.success('Task deleted successfully!', {
-          position: "top-center",
-          autoClose: 3000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-        });
-      }
-    } catch (error) {
-      console.error('Error deleting task:', error.response?.data || error.message);
-      toast.error('Failed to delete task. Please try again.');
+  try {
+    if (!taskId) {
+      throw new Error('Invalid task ID');
     }
-  };
+    const response = await api.delete(`/tasks/${taskId}`);
+    console.log('Delete task response:', response.data);
+    if (response.status === 200) {
+      setTasks(prevTasks => prevTasks.filter(task => task.task_id !== taskId));
+      if (response.data.progress) {
+        setProgress(response.data.progress);
+      }
+      toast.success('Task deleted successfully!');
+    }
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    toast.error(`Failed to delete task: ${error.response?.data?.message || error.message}`);
+  }
+};
 
   const handleUpdateTask = async (taskId, updatedTask) => {
   try {
-    const { title, description, due_date, priority, category_id } = updatedTask;
-    const response = await api.put(`/tasks/${taskId}`, {
-      title,
-      description,
-      due_date,
-      priority: Number(priority),
-      category_id: category_id ? Number(category_id) : null
-    });
-    setTasks(prevTasks => prevTasks.map(task => (task.task_id === taskId ? response.data : task)));
-    setEditingTask(null);
+    const payload = {
+      title: updatedTask.title,
+      description: updatedTask.description,
+      due_date: updatedTask.due_date,
+      priority: Number(updatedTask.priority) || null,
+      category_id: updatedTask.category_id ? Number(updatedTask.category_id) : null
+    };
+
+    console.log('Sending update payload:', payload);
+
+    const response = await api.put(`/tasks/${taskId}`, payload);
+    
+    if (response.status === 200) {
+      setTasks(prevTasks => prevTasks.map(task => 
+        task.task_id === taskId ? response.data.task : task
+      ));
+      if (response.data.progress) {
+        setProgress(response.data.progress);
+      }
+      setEditingTask(null);
+      toast.success('Task updated successfully!');
+    }
   } catch (error) {
     console.error('Error updating task:', error);
-    alert(`Failed to update task: ${error.response?.data?.message || error.message}`);
+    toast.error(`Failed to update task: ${error.response?.data?.message || error.message}`);
   }
 };
 
@@ -256,9 +274,9 @@ const Dashboard = () => {
             </div>
             <ul className="space-y-4">
               {filteredAndSortedTasks.map(task => (
-                <li key={task.task_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
-                  {editingTask === task.task_id ? (
-                    <div className="flex flex-col space-y-2">
+    <li key={`task-${task.task_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+      {editingTask === task.task_id ? (
+        <div className="flex flex-col space-y-2">
                       <input
                         type="text"
                         name="title"
@@ -377,18 +395,18 @@ const Dashboard = () => {
                   <option value="3">Low</option>
                 </select>
                 <select
-                  name="category_id"
-                  value={newTask.category_id}
-                  onChange={handleInputChange}
-                  className="w-full p-2 border rounded"
-                >
-                  <option value="">Select Category</option>
-                  {categories.map(category => (
-                    <option key={category.category_id} value={category.category_id.toString()}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
+  name="category_id"
+  value={newTask.category_id}
+  onChange={handleInputChange}
+  className="w-full p-2 border rounded"
+>
+                  <option key="default" value="">Select Category</option>
+  {categories.map(category => (
+    <option key={`select-category-${category.category_id}`} value={category.category_id.toString()}>
+      {category.name}
+    </option>
+  ))}
+</select>
               </div>
               <button type="submit" className="bg-confirmBtn text-white px-4 py-2 rounded mt-4 hover:bg-loginBtn">
                 Add Task
@@ -399,11 +417,11 @@ const Dashboard = () => {
         <div className="space-y-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <h2 className="text-2xl font-semibold mb-4 text-confirmBtn">Categories</h2>
-            <ul className="space-y-4">
-              {categories.map(category => (
-                <li key={category.category_id} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
-                  {editingCategory === category.category_id ? (
-                    <div className="flex flex-col space-y-2">
+              <ul className="space-y-4">
+  {categories.map(category => (
+    <li key={`category-${category.category_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+      {editingCategory === category.category_id ? (
+        <div className="flex flex-col space-y-2">
                       <input
                         type="text"
                         name="name"
