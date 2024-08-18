@@ -63,6 +63,7 @@ const Dashboard = () => {
       progress: undefined,
     });
   };
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTask(prev => ({ ...prev, [name]: value }));
@@ -232,12 +233,34 @@ const Dashboard = () => {
   };
 
   const filteredAndSortedTasks = tasks
-    .filter(task => filter === 'all' || task.category_id.toString() === filter)
-    .sort((a, b) => {
-      if (sort === 'due_date') return new Date(a.due_date) - new Date(b.due_date);
-      if (sort === 'priority') return a.priority - b.priority;
-      return 0;
-    });
+  .filter(task => {
+    if (filter === 'all') return true;
+    if (filter === 'daily') return isToday(new Date(task.due_date));
+    if (filter === 'weekly') return isThisWeek(new Date(task.due_date));
+    return task.category_id.toString() === filter;
+  })
+  .sort((a, b) => {
+    if (sort === 'priority') return a.priority - b.priority;
+    if (sort === 'due_date') return new Date(a.due_date) - new Date(b.due_date);
+    return 0;
+  });
+
+// Helper functions for date filtering
+const isToday = (date) => {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+};
+
+const isThisWeek = (date) => {
+  const today = new Date();
+  const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+  const lastDayOfWeek = new Date(firstDayOfWeek);
+  lastDayOfWeek.setDate(lastDayOfWeek.getDate() + 6);
+  
+  return date >= firstDayOfWeek && date <= lastDayOfWeek;
+};
 
     const getPriorityClass = (priority) => {
       switch (priority) {
@@ -287,23 +310,25 @@ const Dashboard = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-loginBtn">Tasks</h2>
-              <div className="space-x-2">
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} className="p-2 border rounded">
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category.category_id} value={category.category_id.toString()}>
-                      {category.name}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-2xl font-semibold text-loginBtn">Tasks</h2>
+            <div className="space-x-2">
+              <select value={filter} onChange={(e) => setFilter(e.target.value)} className="p-2 border rounded">
+                <option value="all">All Tasks</option>
+                <option value="daily">Daily Tasks</option>
+                <option value="weekly">Weekly Tasks</option>
+                {categories.map(category => (
+                  <option key={category.category_id} value={category.category_id.toString()}>
+                    {category.name}
                     </option>
                   ))}
-                </select>
-                <select value={sort} onChange={(e) => setSort(e.target.value)} className="p-2 border rounded">
-                  <option value="due_date">Sort by Due Date</option>
-                  <option value="priority">Sort by Priority</option>
-                </select>
-              </div>
-            </div>
+                  </select>
+                  <select value={sort} onChange={(e) => setSort(e.target.value)} className="p-2 border rounded">
+                    <option value="priority">Sort by Priority</option>
+                    <option value="due_date">Sort by Due Date</option>
+                    </select>
+                    </div>
+                    </div>
             <ul className="space-y-4">
               {filteredAndSortedTasks.map(task => (
     <li key={`task-${task.task_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
