@@ -4,6 +4,7 @@ import CreateAccount from './components/CreateAccount';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import api from './api'; // Make sure this path is correct
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -52,6 +53,8 @@ function App() {
             path="/dashboard"
             element={loggedIn ? <Dashboard setLoggedIn={setLoggedIn} /> : <Navigate to="/login" />}
           />
+          <Route path="/login" element={<Login />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
