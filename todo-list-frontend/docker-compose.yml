@@ -1,11 +1,13 @@
 version: '3'
 services:
   react-app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=http://localhost:3000
+      - NODE_ENV=development
     volumes:
-      - .:/app
+      - ./:/app
       - /app/node_modules
