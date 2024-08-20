@@ -19,17 +19,23 @@ jobs:
       run: |
         pwd
         ls -la
-        cat docker-compose.yml
-        cat Dockerfile
+        ls -la todo-list-frontend
+        cat todo-list-frontend/docker-compose.yml
+        cat todo-list-frontend/Dockerfile
 
     - name: Build the Docker image
-      run: docker-compose build
+      run: |
+        cd todo-list-frontend
+        docker-compose build
 
     - name: Run Docker Compose
-      run: docker-compose up -d
+      run: |
+        cd todo-list-frontend
+        docker-compose up -d
 
     - name: Wait for the app to be ready
       run: |
+        cd todo-list-frontend
         max_retries=30
         counter=0
         until curl http://localhost:3000 || [ $counter -eq $max_retries ]
@@ -44,8 +50,12 @@ jobs:
         fi
 
     - name: Run tests
-      run: docker-compose exec -T react-app npm test
+      run: |
+        cd todo-list-frontend
+        docker-compose exec -T react-app npm test
 
     - name: Stop containers
       if: always()
-      run: docker-compose down
+      run: |
+        cd todo-list-frontend
+        docker-compose down
