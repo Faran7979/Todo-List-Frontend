@@ -7,19 +7,14 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-
     - name: Build the Docker image
       run: docker-compose build
-
     - name: Run Docker Compose
       run: docker-compose up -d
-
     - name: Wait for the app to be ready
       run: |
         max_retries=30
@@ -34,10 +29,8 @@ jobs:
           echo "App failed to start in time"
           exit 1
         fi
-
     - name: Run tests
       run: docker-compose exec -T react-app npm test
-
     - name: Stop containers
       if: always()
       run: docker-compose down
