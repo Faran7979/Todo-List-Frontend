@@ -1,0 +1,36 @@
+name: Docker Compose CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the Docker image
+      run: docker-compose build
+    - name: Run Docker Compose
+      run: docker-compose up -d
+    - name: Wait for the app to be ready
+      run: |
+        max_retries=30
+        counter=0
+        until curl http://localhost:3000 || [ $counter -eq $max_retries ]
+        do
+          echo "Waiting for app to be ready..."
+          sleep 5
+          ((counter++))
+        done
+        if [ $counter -eq $max_retries ]; then
+          echo "App failed to start in time"
+          exit 1
+        fi
+    - name: Run tests
+      run: docker-compose exec -T react-app npm test
+    - name: Stop containers
+      if: always()
+      run: docker-compose down
