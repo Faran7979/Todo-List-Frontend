@@ -21,14 +21,6 @@ jobs:
         sudo chmod +x /usr/local/bin/docker-compose
         docker-compose --version
 
-    - name: Debug - List directory contents
-      run: |
-        pwd
-        ls -la
-        ls -la todo-list-frontend
-        cat todo-list-frontend/docker-compose.yml
-        cat todo-list-frontend/Dockerfile
-
     - name: Build the Docker image
       run: |
         cd todo-list-frontend
@@ -39,28 +31,27 @@ jobs:
         cd todo-list-frontend
         docker-compose up -d
 
-    - name: Check Docker logs
-      run: |
-        cd todo-list-frontend
-        docker-compose logs
-
     - name: Wait for the app to be ready
       run: |
         cd todo-list-frontend
-        max_retries=30
+        max_retries=60
         counter=0
         container_ip=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $(docker-compose ps -q react-app))
-        until curl http://$container_ip:3000 || [ $counter -eq $max_retries ]
+        echo "Container IP: $container_ip"
+        until curl -s http://$container_ip:3000 > /dev/null || [ $counter -eq $max_retries ]
         do
           echo "Waiting for app to be ready... (Attempt $counter)"
           docker-compose logs --tail=50 react-app
-          sleep 5
+          sleep 10
           ((counter++))
         done
         if [ $counter -eq $max_retries ]; then
           echo "App failed to start in time"
           docker-compose logs
           exit 1
+        else
+          echo "App is ready!"
+          curl -v http://$container_ip:3000
         fi
 
     - name: Run tests

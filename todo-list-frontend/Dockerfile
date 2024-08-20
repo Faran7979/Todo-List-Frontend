@@ -8,8 +8,9 @@ RUN npm install
 
 COPY . .
 
-RUN npm run build
-
 EXPOSE 3000
+
+# Use this environment variable to make sure React listens on all interfaces
+ENV HOST=0.0.0.0
 
 CMD ["npm", "start"]

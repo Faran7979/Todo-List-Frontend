@@ -8,6 +8,8 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=development
+      - CI=true
+    command: npm run start:ci
     volumes:
       - ./:/app
       - /app/node_modules
