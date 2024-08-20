@@ -3,6 +3,22 @@ import api from '../api';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
+const isToday = (date) => {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+};
+
+const isThisWeek = (date) => {
+  const today = new Date();
+  const firstDayOfWeek = new Date(today.setDate(today.getDate() - today.getDay()));
+  const lastDayOfWeek = new Date(firstDayOfWeek);
+  lastDayOfWeek.setDate(lastDayOfWeek.getDate() + 6);
+  
+  return date >= firstDayOfWeek && date <= lastDayOfWeek;
+};
+
 const Dashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -63,6 +79,7 @@ const Dashboard = () => {
       progress: undefined,
     });
   };
+  
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewTask(prev => ({ ...prev, [name]: value }));
@@ -232,21 +249,26 @@ const Dashboard = () => {
   };
 
   const filteredAndSortedTasks = tasks
-    .filter(task => filter === 'all' || task.category_id.toString() === filter)
-    .sort((a, b) => {
-      if (sort === 'due_date') return new Date(a.due_date) - new Date(b.due_date);
-      if (sort === 'priority') return a.priority - b.priority;
-      return 0;
-    });
+  .filter(task => {
+    if (filter === 'all') return true;
+    if (filter === 'daily') return isToday(new Date(task.due_date));
+    if (filter === 'weekly') return isThisWeek(new Date(task.due_date));
+    return task.category_id.toString() === filter;
+  })
+  .sort((a, b) => {
+    if (sort === 'priority') return a.priority - b.priority;
+    if (sort === 'due_date') return new Date(a.due_date) - new Date(b.due_date);
+    return 0;
+  });
 
-  const getPriorityClass = (priority) => {
-    switch (priority) {
-      case 1: return 'bg-red-500 text-white';
-      case 2: return 'bg-yellow-500 text-black';
-      case 3: return 'bg-green-500 text-white';
-      default: return 'bg-gray-500 text-white';
-    }
-  };
+    const getPriorityClass = (priority) => {
+      switch (priority) {
+        case 1: return 'bg-red-500 text-white px-2 py-1 rounded';
+        case 2: return 'bg-yellow-500 text-black px-2 py-1 rounded';
+        case 3: return 'bg-green-500 text-white px-2 py-1 rounded';
+        default: return 'bg-gray-500 text-white px-2 py-1 rounded';
+      }
+    };
 
   const handleEditTask = (task) => {
     setEditingTask(task.task_id);
@@ -278,35 +300,37 @@ const Dashboard = () => {
     <div className="bg-gray-100 min-h-screen p-8">
       <ToastContainer />
       <button
-      onClick={handleLogout}
-      className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
-    >
-      LogOut
-    </button>
-     <h1 className="text-4xl font-bold mb-8 text-center text-confirmBtn">Todo List Dashboard</h1>
+        onClick={handleLogout}
+        className="absolute top-4 right-4 bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700"
+      >
+        LogOut
+      </button>
+      <h1 className="text-4xl font-bold mb-8 text-center text-confirmBtn">Todo List Dashboard</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+        <div className="lg:col-span-2">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-semibold text-loginBtn">Tasks</h2>
               <div className="space-x-2">
-                <select value={filter} onChange={(e) => setFilter(e.target.value)} className="p-2 border rounded">
-                  <option value="all">All Categories</option>
-                  {categories.map(category => (
-                    <option key={category.category_id} value={category.category_id.toString()}>
-                      {category.name}
+              <select value={filter} onChange={(e) => setFilter(e.target.value)} className="p-2 border rounded">
+                <option value="all">All Tasks</option>
+                <option value="daily">Daily Tasks</option>
+                <option value="weekly">Weekly Tasks</option>
+                {categories.map(category => (
+                  <option key={`filter-category-${category.category_id}`} value={category.category_id.toString()}>
+                    {category.name}
                     </option>
                   ))}
-                </select>
+                  </select>
                 <select value={sort} onChange={(e) => setSort(e.target.value)} className="p-2 border rounded">
-                  <option value="due_date">Sort by Due Date</option>
                   <option value="priority">Sort by Priority</option>
+                  <option value="due_date">Sort by Due Date</option>
                 </select>
               </div>
             </div>
             <ul className="space-y-4">
-              {filteredAndSortedTasks.map(task => (
-    <li key={`task-${task.task_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+            {filteredAndSortedTasks.map(task => (
+              <li key={`task-${task.task_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
       {editingTask === task.task_id ? (
         <div className="flex flex-col space-y-2">
                       <input
@@ -371,23 +395,23 @@ const Dashboard = () => {
                       onChange={() => toggleTaskCompletion(task.task_id, task.is_completed)}
                         className="form-checkbox"
                               />
-                        <div>
-                          <h3 className="text-lg font-semibold">{task.title}</h3>
-                          <p>{task.description}</p>
-                          <p>Due Date: {task.due_date}</p>
-                          <p className={getPriorityClass(task.priority)}>Priority: {task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</p>
-                        </div>
+                              <div>
+                                <h3 className="text-lg font-semibold">{task.title}</h3>
+                                <p>{task.description}</p>
+                                <p>Due Date: {new Date(task.due_date).toLocaleDateString()}</p>
+                                <p>Priority: <span className={getPriorityClass(task.priority)}>{task.priority === 1 ? 'High' : task.priority === 2 ? 'Medium' : 'Low'}</span></p>
+                                </div>
                       </div>
                       <div className="flex space-x-2">
-                        <button onClick={() => handleEditTask(task)} className="text-blue-500 hover:text-blue-700">
+                        <button onClick={() => handleEditTask(task)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
                           Edit
-                        </button>
-                        <button onClick={() => handleDeleteTask(task.task_id)} className="text-red-500 hover:text-red-700">
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
+                          </button>
+                          <button onClick={() => handleDeleteTask(task.task_id)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                            Delete
+                            </button>
+                            </div>
+                            </>
+                          )}
                 </li>
               ))}
             </ul>
@@ -447,61 +471,61 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="space-y-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-semibold mb-4 text-confirmBtn">Categories</h2>
-              <ul className="space-y-4">
-  {categories.map(category => (
-    <li key={`category-${category.category_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
-      {editingCategory === category.category_id ? (
-        <div className="flex flex-col space-y-2">
-                      <input
-                        type="text"
-                        name="name"
-                        value={editingCategoryData.name}
-                        onChange={handleCategoryInputChange}
-                        className="p-2 border rounded"
-                      />
-                      <div className="flex space-x-2">
-                        <button onClick={() => handleUpdateCategory(category.category_id, editingCategoryData)} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">
-                          Save
-                        </button>
-                        <button onClick={() => setEditingCategory(null)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
-                          Cancel
-                        </button>
-                      </div>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4 text-confirmBtn">Categories</h2>
+          <ul className="space-y-4">
+            {categories.map(category => (
+              <li key={`category-${category.category_id}`} className="bg-gray-50 rounded-lg p-4 shadow flex justify-between items-center">
+                {editingCategory === category.category_id ? (
+                  <div className="flex flex-col space-y-2">
+                    <input
+                      type="text"
+                      name="name"
+                      value={editingCategoryData.name}
+                      onChange={handleCategoryInputChange}
+                      className="p-2 border rounded"
+                    />
+                    <div className="flex space-x-2">
+                      <button onClick={() => handleUpdateCategory(category.category_id, editingCategoryData)} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-700">
+                        Save
+                      </button>
+                      <button onClick={() => setEditingCategory(null)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                        Cancel
+                      </button>
                     </div>
-                  ) : (
-                    <>
-                      <span>{category.name}</span>
-                      <div className="flex space-x-2">
-                        <button onClick={() => handleEditCategory(category)} className="text-blue-500 hover:text-blue-700">
-                          Edit
-                        </button>
-                        <button onClick={() => handleDeleteCategory(category.category_id)} className="text-red-500 hover:text-red-700">
-                          Delete
-                        </button>
-                      </div>
-                    </>
-                  )}
-                </li>
-              ))}
+                  </div>
+                ) : (
+                  <>
+                    <span>{category.name}</span>
+                    <div className="flex space-x-2">
+                      <button onClick={() => handleEditCategory(category)} className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700">
+                        Edit
+                      </button>
+                      <button onClick={() => handleDeleteCategory(category.category_id)} className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-700">
+                        Delete
+                      </button>
+                    </div>
+                  </>
+                )}
+              </li>
+            ))}
             </ul>
             <form onSubmit={handleAddCategory} className="mt-4">
-              <input
-                type="text"
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                placeholder="New Category"
-                className="w-full p-2 border rounded mb-2"
-              />
-              <button type="submit" className="bg-loginBtn text-white px-4 py-2 rounded hover:bg-confirmBtn">
-                Add Category
-              </button>
-            </form>
-          </div>
-           <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Progress</h2>
-        <div className="space-y-4">
+            <input
+              type="text"
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              placeholder="New Category"
+              className="w-full p-2 border rounded mb-2"
+            />
+            <button type="submit" className="bg-loginBtn text-white px-4 py-2 rounded hover:bg-confirmBtn">
+              Add Category
+            </button>
+          </form>
+        </div>
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-semibold mb-4 text-loginBtn">Progress</h2>
+          <div className="space-y-4">
           <div>
             <span className="font-semibold">Weekly Progress:</span>
             <div className="bg-gray-200 rounded-full h-4 mt-1">
