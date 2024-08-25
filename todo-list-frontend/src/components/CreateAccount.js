@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
 
@@ -14,11 +14,7 @@ const CreateAccount = () => {
   const [errors, setErrors] = useState({});
   const [isFormValid, setIsFormValid] = useState(false);
 
-  useEffect(() => {
-    validateForm();
-  }, [formData]);
-
-  const validateForm = () => {
+  const validateForm = useCallback(() => {
     let errors = {};
     if (formData.name.length < 5) {
       errors.name = 'Name must be at least 5 characters long';
@@ -34,7 +30,11 @@ const CreateAccount = () => {
     }
     setErrors(errors);
     setIsFormValid(Object.keys(errors).length === 0);
-  };  
+  }, [formData]);
+
+  useEffect(() => {
+    validateForm();
+  }, [validateForm]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
